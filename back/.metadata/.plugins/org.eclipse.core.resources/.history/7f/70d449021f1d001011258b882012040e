@@ -1,0 +1,5 @@
+package com.example.adminapi.service;
+
+public class FcmService {
+
+}

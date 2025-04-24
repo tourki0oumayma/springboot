@@ -1,0 +1,67 @@
+package com.example.adminapi.controller;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.adminapi.model.Medecin;
+import com.example.adminapi.service.MedecinService;
+
+@RestController
+@CrossOrigin(origins = "*")
+@RequestMapping("/medecins")
+public class MedecinController {
+    @Autowired
+    private MedecinService medecinService;
+
+    @GetMapping
+    public List<Medecin> getAllMedecins() {
+        return medecinService.getAllMedecins();
+    }
+
+    @GetMapping("/{id}")
+    public Optional<Medecin> getMedecinById(@PathVariable int id) {
+        return medecinService.getMedecinById(id);
+    }
+
+    @PostMapping
+    public Medecin createMedecin(@RequestBody Medecin medecin) {
+        return medecinService.createMedecin(medecin);
+    }
+
+    @PutMapping("/{id}")
+    public Medecin updateMedecin(@PathVariable int id, @RequestBody Medecin medecin) {
+        return medecinService.updateMedecin(id, medecin);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteMedecin(@PathVariable int id) {
+        medecinService.deleteMedecin(id);
+    }
+    @PutMapping("/{id}/like")
+    public String likeMedecin(@PathVariable int id) {
+        Optional<Medecin> medecinOpt = medecinService.getMedecinById(id);
+        if (medecinOpt.isPresent()) {
+            Medecin medecin = medecinOpt.get();
+            medecin.setNbLikes(medecin.getNbLikes() + 1);
+            medecinService.updateMedecin(id, medecin);
+            return "❤️ Like ajouté. Total likes: " + medecin.getNbLikes();
+        } else {
+            return "❌ Médecin non trouvé.";
+        }
+    }
+    @PutMapping("/{id}/dislike")
+    public String dislikeMedecin(@PathVariable int id) {
+        Optional<Medecin> medecinOpt = medecinService.getMedecinById(id);
+        if (medecinOpt.isPresent()) {
+            Medecin medecin = medecinOpt.get();
+            medecin.decrementLikes();
+            medecinService.updateMedecin(id, medecin);
+            return "👎 Like retiré. Total likes: " + medecin.getNbLikes();
+        } else {
+            return "❌ Médecin non trouvé.";
+        }
+    }
+}

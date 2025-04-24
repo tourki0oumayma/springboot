@@ -1,0 +1,71 @@
+package com.example.adminapi.configuration;
+
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+@Component // no usages new
+public class JwtUtils {
+
+    @Value("${app.secret-key}")
+    private String secretKey;
+
+    @Value("${app.expiration-time}")
+    private long expirationTime;
+
+    public String generateToken(String username) { // no usages new
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, username);
+    }
+
+    private String createToken(Map<String, Object> claims, String subject) { // 1 usage new
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(subject)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+    private Key getSignKey() { // 2 usages new
+        byte[] keyBytes = secretKey.getBytes();
+        return new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
+    }
+
+    public Boolean validateToken(String token, UserDetails userDetails) { // no usages new
+        String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    private boolean isTokenExpired(String token) { // 1 usage new
+        return extractExpirationDate(token).before(new Date());
+    }
+
+    public String extractUsername(String token) { // 1 usage new
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    private Date extractExpirationDate(String token) { // no usages new
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) { // 2 usages new
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token) { // 1 usage new
+        return Jwts.parser()
+                .setSigningKey(getSignKey())
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+	
+}
